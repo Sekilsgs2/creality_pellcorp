@@ -18,9 +18,13 @@
 4. Далее можно запускать автоматизированную установку выполнив команды - 
 
 	git config --global http.sslVerify false
+
 	git clone https://github.com/Sekilsgs2/creality_pellcorp.git /usr/data/pellcorp
+
 	sync
+
 	/usr/data/pellcorp/k1/installer.sh --install loadcell
+
  
    Скрипт выполнит автоматизированную установку klipper и всех нужных модулей - после установки требуется перезапустить 
    и если принтер не выдаст никаких ошибок можно будет запускать калибровку тензо датчиков по инструкции (раздел 4.4 Калибровка ) -
