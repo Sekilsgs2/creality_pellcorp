@@ -1012,6 +1012,7 @@ setup_loadcell() {
         cleanup_probe btteddy
 
         cp /usr/data/pellcorp/k1/loadcell.cfg /usr/data/printer_data/config/ || exit $?
+	cp /usr/data/pellcorp/k1/loadcell-${model}.cfg /usr/data/printer_data/config/ || exit $?
 
         $CONFIG_HELPER --add-include "loadcell.cfg" || exit $?
         $CONFIG_HELPER --add-include "loadcell-${model}.cfg" || exit $?
@@ -1104,6 +1105,8 @@ elif [ -f /usr/data/printer_data/config/microprobe-k1.cfg ] || [ -f /usr/data/pr
     probe=microprobe
 elif [ -f /usr/data/printer_data/config/btteddy-k1.cfg ] || [ -f /usr/data/printer_data/config/btteddy-k1m.cfg ]; then
     probe=btteddy
+elif [ -f /usr/data/printer_data/config/loadcell-k1.cfg ] || [ -f /usr/data/printer_data/config/loadcell-k1m.cfg ]; then
+    probe=loadcell	
 fi
 
 mode=install
@@ -1121,7 +1124,7 @@ while true; do
     elif [ "$1" = "--debug" ]; then
         shift
         debug=true
-    elif [ "$1" = "microprobe" ] || [ "$1" = "bltouch" ] || [ "$1" = "cartographer" ] || [ "$1" = "cartotouch" ] || [ "$1" = "btteddy" ]; then
+    elif [ "$1" = "microprobe" ] || [ "$1" = "bltouch" ] || [ "$1" = "cartographer" ] || [ "$1" = "cartotouch" ] || [ "$1" = "btteddy" ] || [ "$1" = "loadcell" ]; then
         if [ -n "$probe" ] && [ "$1" != "$probe" ]; then
           echo "WARNING: About to switch from $probe to $1!"
         fi
@@ -1249,7 +1252,7 @@ elif [ "$probe" = "btteddy" ]; then
 elif [ "$probe" = "microprobe" ]; then
     setup_microprobe
     setup_probe_specific=$?
-elif [ "$probe" = "loadcellprobe" ]; then
+elif [ "$probe" = "loadcell" ]; then
     setup_loadcell
     setup_probe_specific=$?
 else
