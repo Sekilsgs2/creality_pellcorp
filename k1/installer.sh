@@ -92,7 +92,7 @@ elif [ "$1" = "--klipper-repo" ] && [ -n "$2" ]; then # convenience for testing 
     fi
 
     if [ ! -d /usr/data/klipper ]; then
-        git clone https://github.com/pellcorp/${klipper_repo}.git /usr/data/klipper || exit $?
+        git clone https://github.com/Sekilsgs2/${klipper_repo}.git /usr/data/klipper || exit $?
     else
         update_repo /usr/data/klipper || exit $?
     fi
@@ -509,7 +509,7 @@ install_klipper() {
     if [ $? -ne 0 ]; then
         echo ""
 
-        klipper_repo=klipper
+        klipper_repo=klipper_pellcorp
         # pellcorp/k1-carto-klipper is a version of klipper that is the same as k1-klipper/klipper k1_carto branch
         if [ "$probe" = "cartographer" ]; then
             klipper_repo=k1-carto-klipper
@@ -548,15 +548,7 @@ install_klipper() {
         if [ ! -d /usr/data/klipper/.git ]; then
             echo "INFO: Installing ${klipper_repo} ..."
 
-            if [ "$AF_GIT_CLONE" = "ssh" ]; then
-                export GIT_SSH_IDENTITY=${klipper_repo}
-                export GIT_SSH=/usr/data/pellcorp/k1/ssh/git-ssh.sh
-                git clone git@github.com:pellcorp/${klipper_repo}.git /usr/data/klipper || exit $?
-                # reset the origin url to make moonraker happy
-                cd /usr/data/klipper && git remote set-url origin https://github.com/pellcorp/${klipper_repo}.git && cd - > /dev/null
-            else
-                git clone https://github.com/pellcorp/${klipper_repo}.git /usr/data/klipper || exit $?
-            fi
+            git clone https://github.com/Sekilsgs2/${klipper_repo}.git /usr/data/klipper || exit $?
             [ -d /usr/share/klipper ] && rm -rf /usr/share/klipper
         fi
 
@@ -583,7 +575,6 @@ install_klipper() {
 
         $CONFIG_HELPER --remove-section "bl24c16f" || exit $?
         $CONFIG_HELPER --remove-section "prtouch_v2" || exit $?
-        $CONFIG_HELPER --remove-section "mcu leveling_mcu" || exit $?
         $CONFIG_HELPER --remove-section-entry "printer" "square_corner_max_velocity" || exit $?
         $CONFIG_HELPER --remove-section-entry "printer" "max_accel_to_decel" || exit $?
 
@@ -1008,6 +999,35 @@ setup_btteddy() {
     return 0
 }
 
+setup_loadcell() {
+    grep -q "loadcell-probe" /usr/data/pellcorp.done
+    if [ $? -ne 0 ]; then
+        echo ""
+        echo "INFO: Setting up loadcell ..."
+
+        cleanup_probe bltouch
+        cleanup_probe microprobe
+        cleanup_probe cartographer
+        cleanup_probe cartotouch
+        cleanup_probe btteddy
+
+        cp /usr/data/pellcorp/k1/loadcell.cfg /usr/data/printer_data/config/ || exit $?
+
+        $CONFIG_HELPER --add-include "loadcell.cfg" || exit $?
+        $CONFIG_HELPER --add-include "loadcell-${model}.cfg" || exit $?
+        $CONFIG_HELPER --add-include "nozzle_clear.cfg" || exit $?
+        $CONFIG_HELPER --replace-section-entry "mcu" "baud" "921600" || exit $?
+        $CONFIG_HELPER --replace-section-entry "mcu nozzle_mcu" "baud" "921600" || exit $?
+        $CONFIG_HELPER --replace-section-entry "mcu leveling_mcu" "baud" "921600" || exit $?
+        cp /usr/data/pellcorp/k1/nozzle_clear.cfg /usr/data/printer_data/config/ || exit $?
+
+        echo "loadcell-probe" >> /usr/data/pellcorp.done
+        sync
+        return 1
+    fi
+    return 0
+}
+
 install_entware() {
     local mode=$1
     if ! grep -q "entware" /usr/data/pellcorp.done; then
@@ -1228,6 +1248,9 @@ elif [ "$probe" = "btteddy" ]; then
     setup_probe_specific=$?
 elif [ "$probe" = "microprobe" ]; then
     setup_microprobe
+    setup_probe_specific=$?
+elif [ "$probe" = "loadcellprobe" ]; then
+    setup_loadcell
     setup_probe_specific=$?
 else
     echo "Probe $probe not supported"
