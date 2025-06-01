@@ -240,7 +240,7 @@ install_moonraker() {
 
     grep -q "moonraker" /usr/data/pellcorp.done
     if [ $? -ne 0 ]; then
-        echo ""
+        echo
         
         if [ "$mode" != "update" ] && [ -d /usr/data/moonraker ]; then
             if [ -f /etc/init.d/S56moonraker_service ]; then
@@ -249,7 +249,6 @@ install_moonraker() {
             if [ -d /usr/data/printer_data/database/ ]; then
                 [ -f /usr/data/moonraker-database.tar.gz ] && rm /usr/data/moonraker-database.tar.gz
 
-                echo ""
                 echo "INFO: Backing up moonraker database ..."
                 cd /usr/data/printer_data/
 
@@ -261,6 +260,19 @@ install_moonraker() {
 
         if [ "$mode" != "update" ] && [ -d /usr/data/moonraker-env ]; then
             rm -rf /usr/data/moonraker-env
+        elif [ ! -d /usr/data/moonraker-env/lib/python3.8/site-packages/dbus_fast ] || [ -d /usr/data/moonraker-env/lib/python3.8/site-packages/apprise-1.7.1.dist-info ]; then
+            echo "INFO: Forcing recreation of moonraker-env ..."
+            rm -rf /usr/data/moonraker-env
+        fi
+
+        if [ -d /usr/data/moonraker/.git ]; then
+            cd /usr/data/moonraker
+            MOONRAKER_URL=$(git remote get-url origin)
+            cd - > /dev/null
+            if [ "$MOONRAKER_URL" != "https://github.com/pellcorp/moonraker.git" ]; then
+                echo "INFO: Forcing moonraker to switch to pellcorp/moonraker"
+                rm -rf /usr/data/moonraker
+            fi
         fi
 
         if [ ! -d /usr/data/moonraker/.git ]; then
@@ -269,11 +281,11 @@ install_moonraker() {
             [ -d /usr/data/moonraker ] && rm -rf /usr/data/moonraker
             [ -d /usr/data/moonraker-env ] && rm -rf /usr/data/moonraker-env
 
-            echo ""
-            git clone https://github.com/Arksine/moonraker /usr/data/moonraker || exit $?
+            echo
+            git clone https://github.com/pellcorp/moonraker.git /usr/data/moonraker || exit $?
 
             if [ -f /usr/data/moonraker-database.tar.gz ]; then
-                echo ""
+                echo
                 echo "INFO: Restoring moonraker database ..."
                 cd /usr/data/printer_data/
                 tar -zxf /usr/data/moonraker-database.tar.gz
@@ -306,6 +318,8 @@ install_moonraker() {
         fi
 
         ln -sf /usr/data/pellcorp/k1/tools/supervisorctl /usr/bin/ || exit $?
+        ln -sf /usr/data/pellcorp/k1/tools/systemctl /usr/bin/ || exit $?
+        ln -sf /usr/data/pellcorp/k1/tools/sudo /usr/bin/ || exit $?
         cp /usr/data/pellcorp/k1/services/S56moonraker_service /etc/init.d/ || exit $?
         cp /usr/data/pellcorp/k1/moonraker.conf /usr/data/printer_data/config/ || exit $?
         ln -sf /usr/data/pellcorp/k1/moonraker.asvc /usr/data/printer_data/ || exit $?
