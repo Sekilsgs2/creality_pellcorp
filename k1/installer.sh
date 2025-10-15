@@ -192,10 +192,14 @@ install_webcam() {
     
     grep -q "webcam" /usr/data/pellcorp.done
     if [ $? -ne 0 ]; then
-        if [ "$mode" != "update" ] || [ ! -f /opt/bin/mjpg_streamer ]; then
+        if [ -f /etc/init.d/S50webcam ]; then
+            /etc/init.d/S50webcam stop
+        fi
+		
+        if [ "$mode" != "update" ]; then
             echo ""
-            echo "INFO: Installing mjpg streamer ..."
-            /opt/bin/opkg install mjpg-streamer mjpg-streamer-input-http mjpg-streamer-input-uvc mjpg-streamer-output-http mjpg-streamer-www || exit $?
+            echo "INFO: Replace mjpg streamer ..."
+            /opt/bin/opkg install /usr/data/pellcorp/k1/mjpeg-streamer_1.0.0_mipsel-3.4.ipk || exit $?
         fi
 
         echo "INFO: Updating webcam config ..."
@@ -207,16 +211,11 @@ install_webcam() {
         pidof cam_app &>/dev/null && killall -TERM cam_app
         pidof mjpg_streamer &>/dev/null && killall -TERM mjpg_streamer
 
-        if [ -f /etc/init.d/S50webcam ]; then
-            /etc/init.d/S50webcam stop
-        fi
-
-        # auto_uvc.sh is responsible for starting the web cam_app
+		# auto_uvc.sh is responsible for starting the web cam_app
         [ -f /usr/bin/auto_uvc.sh ] && rm /usr/bin/auto_uvc.sh
         cp /usr/data/pellcorp/k1/files/auto_uvc.sh /usr/bin/
         chmod 777 /usr/bin/auto_uvc.sh
 
-        cp /usr/data/pellcorp/k1/services/S50webcam /etc/init.d/
         /etc/init.d/S50webcam start
 
         cp /usr/data/pellcorp/k1/webcam.conf /usr/data/printer_data/config/ || exit $?
